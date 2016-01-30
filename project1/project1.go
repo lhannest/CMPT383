@@ -7,7 +7,7 @@ import(
 
 
 func main() {
-	fmt.Printf("Hello, world.\n")
+	fmt.Printf("Hello\n")
 }
 
 func display(token, kind string) {
