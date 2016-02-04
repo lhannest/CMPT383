@@ -82,12 +82,16 @@ func isNumber(s string) bool {
 	}
 
 	for i, r := range s {
-		if r == 'e' {
+		if r == 'e' || r == 'E' {
 			if i != len(s) - 1 {
 				after := s[i+1:]
 				before := s[:i]
 				if after[0] == '-' || after[0] == '+' {
 					after = after[1:]
+				}
+
+				if before[0] == '-' {
+					before = before[1:]
 				}
 
 				if len(before) == 0 {
@@ -101,13 +105,35 @@ func isNumber(s string) bool {
 		}
 	}
 
-	return isSimpleNumber(s)
+	return isFloatNumber(s)
 }
 
 func isFloatNumber(s string) bool {
-	for _, r := range s {
-		if ! unicode.IsNumber(r) && r != '.' {
-			return false
+	if len(s) == 0 {
+		return false
+	}
+
+	if ! unicode.IsNumber(rune(s[0])) {
+		return false
+	}
+
+	already_encountered := false
+
+	if s[0] == '0' {
+		return s[1] == '.'
+	} else {
+		for _, r := range s {
+			if ! unicode.IsNumber(r) && r != '.' {
+				return false
+			}
+
+			if r == '.' {
+				if already_encountered {
+					return false
+				} else {
+					already_encountered = true
+				}
+			}
 		}
 	}
 
@@ -158,7 +184,13 @@ func main() {
 			for i := 1; i <= len(input); i++ {
 				substring := input[0:i]
 
-				if substring == "[" {
+				if substring == "{" {
+					t := makeToken(substring, "OPEN_BRACE")
+					tokens = append(tokens, t)
+				} else if substring == "}" {
+					t := makeToken(substring, "CLOSE_BRACE")
+					tokens = append(tokens, t)
+				} else if substring == "[" {
 					t := makeToken(substring, "OPEN_BRACKET")
 					tokens = append(tokens, t)
 				} else if substring == "]" {
@@ -167,7 +199,18 @@ func main() {
 				} else if substring == "," {
 					t := makeToken(substring, "COMMA")
 					tokens = append(tokens, t)
-
+				} else if substring == "null" {
+					t := makeToken(substring, "NULL")
+					tokens = append(tokens, t)
+				} else if substring == ":" {
+					t := makeToken(substring, "COLON")
+					tokens = append(tokens, t)
+				} else if substring == "true" {
+					t := makeToken(substring, "TRUE")
+					tokens = append(tokens, t)
+				} else if substring == "false" {
+					t := makeToken(substring, "FALSE")
+					tokens = append(tokens, t)
 				} else if isString(substring) {
 					t := makeToken(substring, "STRING")
 					tokens = append(tokens, t)
