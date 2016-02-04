@@ -7,56 +7,6 @@ import(
 	"unicode"
 )
 
-type state interface {
-	evalute(i int, s string) bool
-	getNextStates() []state
-	isFinal() bool
-}
-
-type quote_state struct {
-	next_states []state
-	is_final bool
-}
-
-func (self *quote_state) evalute(i int, s string) bool {
-	if s[i] == '"' {
-		return true
-	} else {
-		return false
-	}
-}
-
-func (self *quote_state) getNextStates() []state {
-	return self.next_states
-}
-
-func (self *quote_state) isFinal() bool {
-	return self.is_final
-}
-
-type digit_state struct {
-	next_states []state
-	is_final bool
-}
-
-func (self *digit_state) evalute(i int, s string) bool {
-	return unicode.IsDigit(rune(s[i]))
-}
-
-func (self *digit_state) getNextStates() []state {
-	return self.next_states
-}
-
-func (self *digit_state) isFinal() bool {
-	return self.is_final
-}
-
-func connect(a, b state) {
-	states := a.getNextStates()
-
-	states = append(states, b)
-}
-
 func containsUnescapedQuote(s string) bool {
 	for i := 0; i < len(s); i++ {
 		if s[i] == '"' && s[i - 1] != '\\' {
@@ -127,6 +77,44 @@ func isString(s string) bool {
 }
 
 func isNumber(s string) bool {
+	if s[0] == '-' {
+		s = s[1:]
+	}
+
+	for i, r := range s {
+		if r == 'e' {
+			if i != len(s) - 1 {
+				after := s[i+1:]
+				before := s[:i]
+				if after[0] == '-' || after[0] == '+' {
+					after = after[1:]
+				}
+
+				if len(before) == 0 {
+					return false
+				}
+
+				return isFloatNumber(before) && isSimpleNumber(after)
+			} else {
+				return false
+			}
+		}
+	}
+
+	return isSimpleNumber(s)
+}
+
+func isFloatNumber(s string) bool {
+	for _, r := range s {
+		if ! unicode.IsNumber(r) && r != '.' {
+			return false
+		}
+	}
+
+	return true
+}
+
+func isSimpleNumber(s string) bool {
 	for _, r := range s {
 		if ! unicode.IsNumber(r) {
 			return false
@@ -162,7 +150,7 @@ func main() {
 
 	for len(input) != 0 {
 		if input[0] == '\n' {
-
+			input = input[1:]
 		} else if input[0] == ' ' {
 			// If the next char is empty space, discard it
 			input = input[1:]
@@ -191,7 +179,8 @@ func main() {
 
 			
 			if len(tokens) == 0 {
-				panic("no token found in: " + input)
+				fmt.Println()
+				panic("no token found in \"" + input + "\"")
 			} else {
 				largest := tokens[0]
 				for _, t := range tokens {
